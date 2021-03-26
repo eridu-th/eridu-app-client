@@ -1,0 +1,35 @@
+@import "root.css";
+@import "login_form.css";
+@import "search_parcel.css";
+@import "signature_pad.css";
+@import "upload_image.css";
+@import "footer.css";
+@import "header.css";
+@import "qr_scanner.css";
+@import "forget_password.css";
+@import "reset_password.css";
+@import "user_setting.css";
+@import "user_signup.css";
+
+html, body {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    height: 100%;
+    width: 100%;
+}

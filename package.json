@@ -1,0 +1,35 @@
+{
+  "name": "eridu-app-client",
+  "version": "1.0.0",
+  "description": "eridu internal use",
+  "main": "app.js",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack-dev-server --mode development --open"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eridu-th/eridu-app-client.git"
+  },
+  "keywords": [
+    "eridu",
+    "thailand"
+  ],
+  "author": "allenlin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/eridu-th/eridu-app-client/issues"
+  },
+  "homepage": "https://github.com/eridu-th/eridu-app-client#readme",
+  "dependencies": {
+    "babel-polyfill": "^6.26.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.4",
+    "babel-preset-env": "^1.7.0",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.2"
+  }
+}

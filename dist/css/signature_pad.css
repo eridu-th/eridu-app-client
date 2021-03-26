@@ -1,0 +1,115 @@
+.update-pod {
+    position: fixed;
+    width: 95%;
+}
+
+.update-pod > div {
+    height: 100%;
+}
+
+.update-pod > div > div:nth-child(2) {
+    height: 70%;
+}
+
+
+.update-pod > div::before {
+    position: fixed;
+    top: 0;
+    left: 0;
+    content: "";
+    width: 100vw;
+    height: 100vh;
+    background:rgba(0,0,0,0.4);
+    z-index: -1;
+}
+
+.signature-pad {
+    position: relative;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
+    font-size: 10px;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #e8e8e8;
+    background-color: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.27), 0 0 40px rgba(0, 0, 0, 0.08) inset;
+    border-radius: 4px;
+    padding: 16px;
+}
+
+.signature-pad--body {
+    position: relative;
+    -webkit-box-flex: 1;
+        -ms-flex: 1;
+            flex: 1;
+    border: 1px solid #f4f4f4;
+    height: 100%;
+}
+
+.signature-pad--body canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.02) inset;
+    touch-action: auto;
+}
+
+.signature-pad--footer {
+    color: #C3C3C3;
+    text-align: center;
+    font-size: 1.2em;
+    margin-top: 8px;
+}
+
+.signature-pad--actions {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: justify;
+        -ms-flex-pack: justify;
+            justify-content: space-between;
+    margin-top: 8px;
+}
+
+.signature-pad--actions div {
+    width: 100%;
+}
+
+.signature-pad--actions div button {
+    width: 80%;
+    padding: 10px;
+}
+
+.signature-pad--actions > div:last-child {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+@media (min-width: 500px) {
+    .signature-pad--actions div {
+        width: auto;
+    }
+    
+    .signature-pad--actions div button {
+        width: auto;
+    }
+    
+    .signature-pad--actions > div:last-child {
+        display: block;
+    }
+
+    .signature-pad {
+        max-width: 500px;
+        max-height: 800px;
+    }
+}

@@ -1,0 +1,23 @@
+header {
+    display: none;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 56px;
+    background: var(--primary-color);
+}
+
+#header {
+    font-size: 36px;
+    text-align: center;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+@media (min-width: 500px) {
+    header {
+        max-width: 500px;
+        margin-top: 2rem;
+    }
+}
