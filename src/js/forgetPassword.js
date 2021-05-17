@@ -14,7 +14,7 @@ export async function forgetPassword() {
     container.innerHTML = `
     <div id="reset_password_form">
         <div id="eridu_logo">
-        <img src="${endpoints.host}/images/eridu_logo.png" alt="eridu_logo">
+        <img src="https://i.imgur.com/iHPqdEf.png" alt="eridu_logo">
         </div>
         <h1>Reset Password</h1>
         <hr>

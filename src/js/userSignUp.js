@@ -83,7 +83,7 @@ function registrationForm(name = '', email = '', phone = '') {
     return `
     <div id="signup_form">
         <div>
-            <a href="#"><img src="${endpoints.host}/images/eridu_logo.png" alt="eridu_logo"></a>
+            <a href="#"><img src="https://i.imgur.com/iHPqdEf.png" alt="eridu_logo"></a>
         </div>
         <h1>Register</h1>
         <div id="form_wrapper">

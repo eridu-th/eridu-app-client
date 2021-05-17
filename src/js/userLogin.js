@@ -9,7 +9,7 @@ export function userLogin() {
     container.innerHTML = `
         <div id="login_form">
             <div id="eridu_logo">
-                <img src="${endpoints.host}/images/eridu_logo.png" alt="eridu_logo">
+                <img src="https://i.imgur.com/iHPqdEf.png" alt="eridu_logo">
             </div>
             <form action="" autocomplete="off">
                 <div class="mb-3">
