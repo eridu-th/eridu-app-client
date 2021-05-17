@@ -1,6 +1,7 @@
 :root {
     --max-width: 1100px;
     --eridu-logo: url("http://eridu-app.herokuapp.com/images/eridu_logo.png");
-    --primary-color: #0F41BC;
+    /* --primary-color: #0F41BC; */
+    --primary-color: royalblue;
     --secondary-color: #F5A201;
 }

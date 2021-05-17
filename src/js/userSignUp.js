@@ -1,5 +1,6 @@
 import endpoints from './endpoints.js';
 import { generateHeaders } from './checkToken.js';
+import { verifyEmail, verifyPhone } from './helpers.js';
 
 const defaultPendingTime = 60;
 const state = {
@@ -12,7 +13,7 @@ const state = {
 
 export async function signupForm() {
     const container = document.querySelector('.container');
-    container.innerHTML = registraionForm(state.name, state.email, state.phone);
+    container.innerHTML = registrationForm(state.name, state.email, state.phone);
     togglePassword();
     const form = container.querySelector('form');
     form.onsubmit = signUpUser;
@@ -78,7 +79,7 @@ async function signUpUser(event) {
     }
 }
 
-function registraionForm(name = '', email = '', phone = '') {
+function registrationForm(name = '', email = '', phone = '') {
     return `
     <div id="signup_form">
         <div>
@@ -166,65 +167,18 @@ function checkBothPasswords() {
 function checkEmailAndPhone() {
     const emailInput = document.querySelector('input[data-type=email]');
     const phoneInput = document.querySelector('input[data-type=phone]');
-    emailInput.oninput = removeInvalid;
-    phoneInput.oninput = removeInvalid;
-    emailInput.onchange = verifyEmail;
-    phoneInput.onchange = verifyPhone;
+    emailInput.oninput = removeValidator;
+    phoneInput.oninput = removeValidator;
+    emailInput.onblur = verifyEmail;
+    phoneInput.onblur = verifyPhone;
 
-    function removeInvalid() {
+    function removeValidator() {
         this.classList.remove('is-invalid');
+        this.classList.remove('is-valid');
     }
 }
 
-async function verifyEmail(event) {
-    const email = event.target.value;
-    const headers = await generateHeaders();
-    const response = await fetch(endpoints.verifyEmailEndpoint, {
-        method: 'post',
-        headers: {
-            'Content-type': 'application/json',
-            'client-token': headers['client-token'],
-            'time-stamp': headers['time-stamp'],
-            'time-signature': headers['time-signature']
-        },
-        body: JSON.stringify({
-            email
-        })
-    })
-        .then(res => res.json())
-        .then(data => data)
-        .catch(err => err);
-    if (response.resCode === 200) {
-        this.classList.add('is-valid');
-    } else {
-        this.classList.add('is-invalid');
-    }
-}
 
-async function verifyPhone(event) {
-    const phone = event.target.value;
-    const headers = await generateHeaders();
-    const response = await fetch(endpoints.verifyPhoneEndpoint, {
-        method: 'post',
-        headers: {
-            'Content-type': 'application/json',
-            'client-token': headers['client-token'],
-            'time-stamp': headers['time-stamp'],
-            'time-signature': headers['time-signature']
-        },
-        body: JSON.stringify({
-            phone
-        })
-    })
-        .then(res => res.json())
-        .then(data => data)
-        .catch(err => err);
-    if (response.resCode === 200) {
-        this.classList.add('is-valid');
-    } else {
-        this.classList.add('is-invalid');
-    }
-}
 
 function clearPasswordInputsOnFly() {
     const passwordInputs = [...document.querySelectorAll('input[type=password]')];

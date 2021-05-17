@@ -12,15 +12,20 @@ import { signupForm } from './userSignUp.js';
 import { verifyToken } from './checkToken.js';
 
 window.onload = async function () {
+    const state = { redirected: false }
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    const authenticated = await verifyToken(token);
-    if (authenticated) {
-        window.location.hash = 'setting';
-        showheaders();
-        navigators('setting');
-        userSetting();
+    if (token) {
+        const authenticated = await verifyToken(token);
+        if (authenticated) {
+            window.location.hash = 'setting';
+            showheaders();
+            navigators('setting');
+            userSetting();
+        } else {
+            userLogin();
+        }
     } else {
-        userLogin();
+        noAuthRedirect(state);
     }
 
     window.onhashchange = async function () {
@@ -56,16 +61,26 @@ window.onload = async function () {
                 window.location.hash = '';
             }
         } else {
-            switch (window.location.hash) {
-                case '#forgetpassword':
-                    forgetPassword();
-                    break;
-                case '#signup':
-                    signupForm();
-                    break;
-                default:
-                    userLogin();
-            }
+            noAuthRedirect(state);
+        }
+    }
+}
+
+function noAuthRedirect(state = null) {
+    if (state) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const jwt = urlParams.get('jwt');
+        if (jwt && !state.redirected) {
+            window.location.hash = 'forgetpassword/reset';
+            state.redirected = true;
+        }
+        const hash = window.location.hash.toLowerCase();
+        if (hash.includes('forgetpassword')) {
+            forgetPassword();
+        } else if (hash.includes('signup')) {
+            signupForm();
+        } else {
+            userLogin();
         }
     }
 }

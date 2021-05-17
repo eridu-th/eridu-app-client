@@ -1,224 +1,84 @@
 import endpoints from './endpoints.js';
 import { generateHeaders } from './checkToken.js';
 
-const defaultPendingTime = 60;
 const state = {
-    otp: '',
-    ref: '',
-    pending: defaultPendingTime,
-    userPhone: null,
-    timeStamp: 0,
-    countdownTimer: null
+    token: null,
+    userEmail: null,
+    emailVerified: false,
+    resetForm: null,
 }
 
-export function forgetPassword() {
+export async function forgetPassword() {
+    resetState(state);
     const container = document.querySelector('.container');
     container.innerHTML = `
-    <div id="login_form">
+    <div id="reset_password_form">
         <div id="eridu_logo">
         <img src="${endpoints.host}/images/eridu_logo.png" alt="eridu_logo">
         </div>
         <h1>Reset Password</h1>
         <hr>
-        <div id="phone_otp_input">
+        <div id="reset_password_input">
         </div>
         <hr>
         <div id="backToLogin">
-            <a class="btn btn-primary" href="#">Back to Login</a>
+            <a class="btn btn-secondary" href="#">Back to Login</a>
         </div>
     </div>
     `;
+    const urlParams = new URLSearchParams(window.location.search);
+    const jwt = urlParams.get('jwt');
+    if (jwt) {
+        const headers = await generateHeaders();
+        const response = await fetch(endpoints.verifyResetTokenEndpoint, {
+            method: 'post',
+            headers: {
+                'Authorization': jwt,
+                'Content-type': 'application/json',
+                'client-token': headers['client-token'],
+                'time-stamp': headers['time-stamp'],
+                'time-signature': headers['time-signature']
+            },
+        }).then(res => res.json()).then(data => data).catch(err => err);
+        if (response.resCode === 200) {
+            state.token = jwt
+            return forgetPasswordForm(state);
+        }
+    }
+    renderEmailInput();
+}
 
-    const otpInput = document.querySelector('#phone_otp_input');
-    if (otpInput) {
-        const phoneForm = `
-        <form action="" method="post" id="submit_phone">
-            <label for="driver_phone" class="form-label">Please enter your phone</label>
-            <div>
-                <input class="form-control" id="driver_phone" type="tel" name="receiver_phone" value=""
-                    inputmode="numeric" placeholder="#0632166699" autocomplete="off" pattern="[0-9]{10}">
-                <button type="submit"><i class="fa fa-search"></i></button>
-                <div id="error_hint" class="invalid-feedback">Phone number starts with 0 and has 10 digits!</div>
+function renderEmailInput() {
+    const emailInput = document.querySelector('#reset_password_input');
+    if (emailInput) {
+        const resetForm = `
+        <form action="" id="submit_email" class="form-group">
+            <div class="input-group mb-3">
+                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                <input data-type="email" value="" type="email" inputmode="email" class="form-control"
+                    aria-label="email" placeholder="Email" required>
+                    <div class="valid-feedback">This email is valid!</div>
+                <div class="invalid-feedback">Something went wrong...Please check the email again!</div>
             </div>
+            <button class="btn btn-primary">Reset Password</button>
         </form>
         `;
-        otpInput.innerHTML = phoneForm;
-        const form = otpInput.querySelector('#submit_phone');
+        emailInput.innerHTML = resetForm;
+        state.resetForm = resetForm;
+        const form = emailInput.querySelector('#submit_email');
+        const input = form.querySelector('input');
+        input.onchange = verifyEmail(state);
 
-        if (otpInput && form) {
-            form.onsubmit = sendOTP;
-            async function sendOTP(event) {
-                event.stopPropagation();
-                event.preventDefault();
-                const input = event.target.querySelector('input');
-                input.oninput = function () {
-                    this.classList.remove('is-invalid');
-                }
-                const userPhone = input.value;
-                if (/^0\d{9}/g.test(userPhone)) {
-                    otpInput.innerHTML = loaderTag();
-                    // const response = await requestOTP(userPhone);
-                    const response = {
-                        resCode: 200,
-                        message: 'success'
-                    }
-                    if (response.resCode === 200) {
-                        console.log(response);
-                        state.ref = response.otpRef;
-                        state.userPhone = userPhone;
-                        state.timeStamp = new Date().getTime();
-                        otpInput.innerHTML = otpForm(state.userPhone);
-                        countdown();
-                        inputHandler();
-                    } else {
-                        otpInput.innerHTML = phoneForm;
-                        const form = otpInput.querySelector('#submit_phone');
-                        form.onsubmit = sendOTP;
-                        console.log(response.message);
-                        alert(response.message);
-                    }
-                } else {
-                    input.classList.add('is-invalid');
-                }
-            }
+        if (form) {
+            form.onsubmit = sendToken(state);
         }
-    }
-}
-
-function countdown(duration = 60) {
-    if (state.countdownTimer) {
-        clearTimeout(state.countdownTimer);
-    }
-    const clock = document.querySelector('#countdown');
-    if (clock) {
-        const now = new Date().getTime();
-        let second = state.pending;
-        let diff = Math.floor((now - state.timeStamp) / 1000);
-        if (diff >= 60) {
-            second = 0;
-        } else if (diff < 60 && second !== 60) {
-            second = 60 - diff;
-        }
-        if (second > 0) {
-            state.pending = second - 1;
-            clock.innerText = state.pending;
-            state.countdownTimer = setTimeout(function () {
-                countdown(state.pending);
-            }, 1000);
-        } else {
-            const requestOTP = document.querySelector('#insert_otp button');
-            requestOTP.removeAttribute('disabled');
-            clock.parentNode.innerHTML = ``;
-            requestOTP.onclick = function (event) {
-                event.preventDefault();
-                state.pending = defaultPendingTime;
-                requestOTP.setAttribute("disabled", true);
-                document.querySelector('#insert_otp button span').innerHTML = `(<span id="countdown">${state.pending}</span> sec)`;
-                countdown(state.pending);
-            }
-        }
-    }
-}
-
-function inputHandler() {
-    const otpInput = document.querySelector('#phone_otp_input');
-
-    const inputs = document.querySelector('.digit-group').querySelectorAll('input');
-    if (inputs.length) {
-        inputs[0].focus();
-
-        inputs.forEach((input) => {
-            input.onchange = async function (e) {
-                const parent = this.parentNode;
-                const value = e.target.value;
-                const errorMsg = document.querySelector('#invalid_otp');
-                errorMsg.innerText = ``;
-                if (value) {
-                    const next = parent.querySelector(`input#${this.dataset.next}`);
-                    if (next) {
-                        next.focus();
-                    }
-                } else if (!value) {
-                    const prev = parent.querySelector(`input#${this.dataset.previous}`);
-                    if (prev) {
-                        prev.focus();
-                    }
-                } else {
-                    state.otp = '';
-                    formTag.querySelectorAll('input').forEach(input => {
-                        state.otp += input.value;
-                    });
-                    if (state.otp.length === 4 && state.otp === '0000') {
-                        const otpCode = state.otp;
-                        otpInput.innerHTML = loaderTag();
-                        // const response = await verifyOTP(otpCode, state.ref);
-                        const response = {
-                            resCode: 200,
-                            message: 'success'
-                        }
-                        if (response.resCode === 200) {
-                            console.log(response);
-                            forgetPasswordForm();
-                        } else {
-                            otpInput.innerHTML = otpForm(state.userPhone, state.pending);
-                            const errorMsg = document.querySelector('#invalid_otp')
-                            errorMsg.innerText = `Invalid OTP Code!`;
-                            inputHandler();
-                            countdown();
-                        }
-                    }
-                }
-            }
-
-            input.onkeyup = async function (e) {
-                const parent = this.parentNode;
-                const formTag = parent.parentNode;
-                const errorMsg = document.querySelector('#invalid_otp');
-                errorMsg.innerText = ``;
-                if (e.keyCode === 8 || e.keyCode === 37) {
-                    const prev = parent.querySelector(`input#${this.dataset.previous}`);
-                    if (prev) {
-                        prev.focus();
-                    }
-                } else if ((e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 65 && e.keyCode <= 90) || (e.keyCode >= 96 && e.keyCode <= 105) || e.keyCode === 39) {
-                    const next = parent.querySelector(`input#${this.dataset.next}`);
-                    if (next) {
-                        next.focus();
-                    } else {
-                        state.otp = '';
-                        formTag.querySelectorAll('input').forEach(input => {
-                            state.otp += input.value;
-                        });
-                        if (state.otp.length === 4) {
-                            const otpCode = state.otp;
-                            otpInput.innerHTML = loaderTag();
-                            // const response = await verifyOTP(otpCode, state.ref);
-                            const response = {
-                                resCode: 200,
-                                message: 'success'
-                            }
-                            if (response.resCode === 200) {
-                                console.log(response);
-                                forgetPasswordForm();
-                            } else {
-                                otpInput.innerHTML = otpForm(state.userPhone, state.pending);
-                                const errorMsg = document.querySelector('#invalid_otp')
-                                errorMsg.innerText = `Invalid OTP Code!`;
-                                inputHandler();
-                                countdown();
-                            }
-                        }
-                    }
-                }
-            }
-        });
     }
 }
 
 function loaderTag() {
     return `
-        <div id="otp_loader">
-            <div class="spinner-border text-warning" style="width:3rem; height:3rem;" role="status">
+        <div id="reset_loader">
+            <div class="spinner-border text-primary" style="width:3rem; height:3rem;" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
             <h4>Loading...</h4>
@@ -226,32 +86,9 @@ function loaderTag() {
     `;
 }
 
-function otpForm(userPhone = null, pendingTime = 60) {
-    return `
-    <form class="digit-group" data-group-name="digits" autocomplete="off" id="insert_otp">
-        <div>
-            <h3>Enter OTP Code</h3>
-            <h3>Phone: ${userPhone}</h3>
-        </div>
-        <div>
-            <input autocomplete="off" type="text" inputmode="numeric" id="digit-1" name="digit-1" data-next="digit-2" maxlength="1" />
-            <input autocomplete="off" type="text" inputmode="numeric" id="digit-2" name="digit-2" data-next="digit-3" data-previous="digit-1"
-                maxlength="1" />
-            <input autocomplete="off" type="text" inputmode="numeric" id="digit-3" name="digit-3" data-next="digit-4" data-previous="digit-2"
-                maxlength="1" />
-            <input autocomplete="off" type="text" inputmode="numeric" id="digit-4" name="digit-4" data-previous="digit-3" maxlength="1" />
-        </div>
-        <div id="invalid_otp"></div>
-        <div>
-            <button class="btn btn-primary" type="submit" disabled>Request OTP <span>(<span id="countdown">${pendingTime}</span> sec)</span></button>
-        </div>
-    </form>
-    `;
-}
-
-function forgetPasswordForm() {
-    const otpInput = document.querySelector('#phone_otp_input');
-    otpInput.innerHTML = `
+function forgetPasswordForm(state) {
+    const emailInput = document.querySelector('#reset_password_input');
+    emailInput.innerHTML = `
         <form action="" autocomplete="off" id="reset_password_form">
             <div class="mb-3">
                 <label for="password" class="form-label">New Password</label>
@@ -286,11 +123,7 @@ function forgetPasswordForm() {
             return input.value;
         });
         if (values[0] === values[1] && !!values[0]) {
-            // const response = await changePassword(state.otp, state.ref, values[0], values[1]);
-            const response = {
-                resCode: 200,
-                message: 'success'
-            }
+            const response = await changePassword(values[0], values[1], state.token);
             if (response.resCode === 200) {
                 alert(response.message);
                 window.location.hash = '';
@@ -306,21 +139,20 @@ function forgetPasswordForm() {
     }
 }
 
-async function changePassword(otp = '', ref = '', password = '', confirmPassword = '') {
-    // const state = await fetchHeader();
-    if (password) {
-        const response = await fetch(endpoints.changePasswordEndpoint, {
+async function changePassword(password = '', confirmPassword = '', token = '') {
+    if (password && token) {
+        const headers = await generateHeaders();
+        const response = await fetch(endpoints.resetPasswordEndpoint, {
             method: 'post',
             mod: 'cors',
             headers: {
+                'Authorization': token,
                 'Content-Type': 'application/json',
-                'Client-Token': state.clientToken,
-                'Time-Stamp': state.timeStamp,
-                'Time-Signature': state.timeSignature
+                'client-token': headers['client-token'],
+                'time-stamp': headers['time-stamp'],
+                'time-signature': headers['time-signature'],
             },
             body: JSON.stringify({
-                otp,
-                ref,
                 password,
                 confirmPassword
             })
@@ -330,62 +162,114 @@ async function changePassword(otp = '', ref = '', password = '', confirmPassword
     return null;
 }
 
-async function verifyOTP(otp = '', ref = '') {
-    const state = await fetchHeader();
-    if (otp && ref) {
-        const response = await fetch(endpoints.verifyOTPEndpoint, {
-            method: 'post',
-            mod: 'cors',
-            headers: {
-                'Content-Type': 'application/json',
-                'Client-Token': state.clientToken,
-                'Time-Stamp': state.timeStamp,
-                'Time-Signature': state.timeSignature
-            },
-            body: JSON.stringify({
-                otp,
-                ref
-            })
-        }).then(res => res.json()).then(data => data).catch(err => err);
-        return response;
+function verifyEmail(state) {
+    return async function (event) {
+        this.classList.remove('is-invalid');
+        this.classList.remove('is-valid');
+        const email = event.target.value;
+        const response = await checkEmail(email);
+        if (response.resCode === 401) {
+            this.classList.add('is-valid');
+            state.emailVerified = true;
+            state.userEmail = email;
+        } else {
+            this.classList.add('is-invalid');
+        }
     }
-    return null;
 }
 
-async function requestOTP(phone = '') {
-    const state = await fetchHeader();
-    const number = /[06](\d{9})/g.exec(phone);
-    if (number) {
-        const response = await fetch(endpoints.requestOTPEndpoint, {
+async function checkEmail(email) {
+    if (email) {
+        const headers = await generateHeaders();
+        const response = await fetch(endpoints.verifyEmailEndpoint, {
             method: 'post',
-            mod: 'cors',
             headers: {
-                'Content-Type': 'application/json',
-                'Client-Token': state.clientToken,
-                'Time-Stamp': state.timeStamp,
-                'Time-Signature': state.timeSignature
+                'Content-type': 'application/json',
+                'client-token': headers['client-token'],
+                'time-stamp': headers['time-stamp'],
+                'time-signature': headers['time-signature']
             },
             body: JSON.stringify({
-                phone: `+66${number[1]}`
+                email
             })
-        }).then(res => res.json()).then(data => data).catch(err => err);
+        })
+            .then(res => res.json())
+            .then(data => data)
+            .catch(err => err);
         return response;
+    } else {
+        console.warn(`'email' isn't given to checkEmail!`);
     }
-    return null;
 }
 
-async function fetchHeader() {
-    const state = {
-        clientToken: '',
-        timeStamp: '',
-        timeSignature: ''
+function sendToken(state) {
+    return async function (event = null) {
+        if (event) {
+            event.preventDefault();
+        }
+        if (/(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/g.test(state.userEmail)) {
+            const emailInput = document.querySelector('#reset_password_input');
+            emailInput.innerHTML = loaderTag();
+            const response = {
+                resCode: 200,
+                message: 'success'
+            }
+            if (response.resCode === 200) {
+                console.log(response);
+                emailInput.innerHTML = emailIsSent(state);
+                const headers = await generateHeaders();
+                const res = await fetch(endpoints.sendResetPasswordEndpoint, {
+                    method: 'post',
+                    headers: {
+                        'Content-type': 'application/json',
+                        'client-token': headers['client-token'],
+                        'time-stamp': headers['time-stamp'],
+                        'time-signature': headers['time-signature']
+                    },
+                    body: JSON.stringify({
+                        email: state.userEmail,
+                    }),
+                }).then(res => res.json()).then(data => data).catch(err => err);
+                console.log(res);
+            } else {
+                emailInput.innerHTML = state.resetForm;
+                const form = emailInput.querySelector('#submit_email');
+                const input = form.querySelector('input');
+                input.value = state.userEmail;
+                input.classList.remove('is-invalid');
+                input.classList.remove('is-valid');
+                form.onsubmit = sendToken;
+                console.log(response.message);
+                alert(response.message);
+            }
+        } else {
+            const input = event.target.querySelector('input');
+            if (input.value) {
+                const response = await checkEmail(input.value);
+                if (response.resCode === 401) {
+                    state.userEmail = input.value;
+                    sendToken(state)();
+                }
+            } else {
+                input.classList.add('is-invalid');
+            }
+        }
     }
-    const response = await generateHeaders();
-    if (response) {
-        state.clientToken = response['Client-Token'];
-        state.timeStamp = response['Time-Stamp'];
-        state.timeSignature = response['Time-Signature'];
-        return state;
+}
+
+function emailIsSent(state = null) {
+    if (state) {
+        return `
+        <p>The reset link has been sent to ${state.userEmail}. Please reset your password in 10 mins!</p>
+        `;
+    } else {
+        console.warn(`'state' isn't given to emailIsSent!`);
     }
-    return null;
+}
+
+function resetState(state) {
+    state.token = null;
+    state.userEmail = null;
+    state.emailVerified = false;
+    state.resetForm = null;
 }
